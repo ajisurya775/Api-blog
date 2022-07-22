@@ -43,6 +43,13 @@ class ArticleCommentController extends Controller
         }
 
         $comment = ArticleComment::find($comment_id);
+        $user = auth()->user();
+        if ($user->id != $comment->user_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'kamu bukan pemilik article'
+            ], 403);
+        }
         $comment->body = $request->body;
         $comment->save();
 
@@ -56,6 +63,13 @@ class ArticleCommentController extends Controller
     public function destroy($comment_id)
     {
         $comment = ArticleComment::find($comment_id);
+        $user = auth()->user();
+        if ($user->id != $comment->user_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'kamu bukan pemilik article'
+            ], 403);
+        }
         $comment->delete();
 
         return response()->json([

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\ArticleShow;
 use App\Models\Article;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -15,7 +16,7 @@ class ArticleController extends Controller
      */
     public function index()
     {
-        $article = Article::latest()->get();
+        $article = Article::latest()->paginate(2);
 
         return response()->json([
             'success' => true,
@@ -68,7 +69,7 @@ class ArticleController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Article berhasil ditampilkan',
-            'data' => $article
+            'data' => new ArticleShow($article)
         ]);
     }
 
@@ -90,12 +91,15 @@ class ArticleController extends Controller
             return response()->json($validator->messages(),422);
         }
 
-        // $article = Article::where('id', $id)->update([
-        //     'title' => $request->title,
-        //     'body' => $request->body
-        // ]);
-
         $article = Article::find($id);
+        $user = auth()->user();
+        if ($user->id != $article->user_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'kamu bukan pemilik article'
+            ], 403);
+        }
+
         $article->title = $request->title;
         $article->body = $request->body;
         $article->save();
@@ -115,7 +119,14 @@ class ArticleController extends Controller
      */
     public function destroy($id)
     {
+        $user = auth()->user();
         $article = Article::find($id);
+        if ($user->id != $article->user_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'kamu bukan pemilik article'
+            ], 403);
+        }
         $article->delete();
 
         return response()->json([
